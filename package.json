@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node app.js"
+    "start": "node app.js",
+    "clean": "rimraf node_modules"
   },
   "dependencies": {
     "cookie-parser": "~1.4.4",

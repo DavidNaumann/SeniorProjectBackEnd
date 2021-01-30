@@ -3,6 +3,14 @@ const httpServer = require("http").createServer(app);
 const mysql = require('mysql');
 //TODO: johnny-five for serial connections
 
+
+/*
+  Notes:
+    Schema:
+
+ */
+
+
 // Setups socket.io to run across the http server and be setup to accept requests from localhost:3000 origin
 const io = require("socket.io")(httpServer, {
   cors: {
@@ -17,7 +25,7 @@ const connection_info = {
   password:'',
   database:'test',
   port:'3306'
-}
+};
 
 let connection = mysql.createConnection(connection_info);
 
@@ -26,6 +34,7 @@ const port = 4001;
 connection.connect();
 
 // TODO: possibly local file caching if mySQL isn't working
+// TODO: change sql_files to dictionary by uuid instead
 
 let sql_files = [];
 

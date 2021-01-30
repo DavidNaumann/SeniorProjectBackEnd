@@ -39,13 +39,12 @@ connection.connect();
 let sql_files = [];
 
 // Initial connection to receive current mySQL table
-connection.query('SELECT * FROM files', function (error, req, res) {
-  if (!error) {
-    var res_string = JSON.stringify(res);
-    var res_json = JSON.parse(res_string);
+connection.query('SELECT * FROM files', function (error, res, req) {
+  if (error) throw error;
+  let res_string = JSON.stringify(res);
+  let res_json = JSON.parse(res_string);
 
-    sql_files = res_json;
-  }
+  sql_files = res_json;
 });
 
 // Gets that the user connected

@@ -20,12 +20,16 @@ const io = require("socket.io")(httpServer, {
 
 // TODO: make connection info more private
 const connection_info = {
-  host:'localhost',
-  user:'root',
-  password:'',
-  database:'test',
-  port:'3306'
+  host: process.env.DB_HOST || 'localhost',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || 'test',
+  port: process.env.DB_PORT || '3306'
 };
+
+const DB_TABLE = process.env.DB_TABLE;
+
+console.log(connection_info);
 
 let connection = mysql.createConnection(connection_info);
 

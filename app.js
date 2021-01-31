@@ -27,7 +27,7 @@ const connection_info = {
   port: process.env.DB_PORT || '3306'
 };
 
-const DB_TABLE = process.env.DB_TABLE;
+const DB_TABLE = process.env.DB_TABLE || 'files';
 
 console.log(connection_info);
 
@@ -43,7 +43,7 @@ connection.connect();
 let sql_files = [];
 
 // Initial connection to receive current mySQL table
-connection.query('SELECT * FROM files', function (error, res, req) {
+connection.query('SELECT * FROM ' + DB_TABLE, function (error, res, req) {
   if (error) throw error;
   let res_string = JSON.stringify(res);
   let res_json = JSON.parse(res_string);
@@ -79,7 +79,7 @@ io.on('connection', (socket) => {
 
     const mysql_arr = [[file.name, file.category, file.date, file.uuid]];
 
-    connection.query("INSERT INTO files (name, category, date, uuid) VALUES (?)", mysql_arr, (error, results) => {
+    connection.query("INSERT INTO "+ DB_TABLE +" (name, category, date, uuid) VALUES (?)", mysql_arr, (error, results) => {
       if (error) throw error;
 
       sql_files.push(file);
@@ -94,7 +94,7 @@ io.on('connection', (socket) => {
 
     console.log("deleting file with uuid: ", uuid);
 
-    const SQL = "DELETE FROM files WHERE uuid = ?";
+    const SQL = "DELETE FROM "+ DB_TABLE +" WHERE uuid = ?";
 
     connection.query(SQL, uuid, (error, results, fields) => {
       if (error) throw error;

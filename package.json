@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "start": "node app.js",
+    "postinstall": "sh ./database_start.sh",
     "clean": "rimraf node_modules"
   },
   "dependencies": {

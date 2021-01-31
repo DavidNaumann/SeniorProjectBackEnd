@@ -11,9 +11,7 @@ echo "Please enter host (most likely localhost)"
 read -r DB_HOST
 echo "Please enter port (most likely 3306)"
 read -r DB_PORT
-echo "Please enter root user MySQL password!"
-echo "Note: password will be hidden when typing"
-read -r -s rootpasswd
+
 echo "Please enter the NAME of the new MySQL database! (example: database1)"
 read -r DB_NAME
 echo "Creating new MySQL database..."
@@ -39,9 +37,9 @@ echo "Please enter name of database table that will be used"
 read -r DB_TABLE;
 
 
-mysql -u ${mainuser} -p ${rootpasswd} "CREATE TABLE '${DB_TABLE}' ( 'id' int(11) NOT NULL, 'name' varchar(40) NOT NULL, 'category' varchar(40) NOT NULL, 'date' varchar(40) NOT NULL, 'uuid' varchar(40) NOT NULL) DEFAULT CHARSET=latin1;"
-mysql -u ${mainuser} -p ${rootpasswd} "ALTER TABLE '${DB_TABLE}' ADD PRIMARY KEY ('id');"
-mysql -u ${mainuser} -p ${rootpasswd} "ALTER TABLE '${DB_TABLE}' MODIFY 'id' int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=0; COMMIT;"
+mysql -u ${mainuser} -p ${rootpasswd} -e "CREATE TABLE '${DB_TABLE}' ( 'id' int(11) NOT NULL, 'name' varchar(40) NOT NULL, 'category' varchar(40) NOT NULL, 'date' varchar(40) NOT NULL, 'uuid' varchar(40) NOT NULL) DEFAULT CHARSET=latin1;"
+mysql -u ${mainuser} -p ${rootpasswd} -e "ALTER TABLE '${DB_TABLE}' ADD PRIMARY KEY ('id');"
+mysql -u ${mainuser} -p ${rootpasswd} -e "ALTER TABLE '${DB_TABLE}' MODIFY 'id' int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=0; COMMIT;"
 
 
 export DB_HOST;

@@ -1,14 +1,18 @@
+/**
+ * @desc This file is for starting the backend in Express for our Senior Project design
+ * @authors David Naumann and Mackenzie Wisdom
+ *
+ */
+
+// Variables for starting http server, mysql server and connections over the serial port
 const app = require('express');
 const httpServer = require("http").createServer(app);
 const mysql = require('mysql');
-//TODO: johnny-five for serial connections
+const SerialPort  = require('serialport');
 
 
-/*
-  Notes:
-    Schema:
-
- */
+// Opening serial comms port for serial comms
+const serial_port = new SerialPort('/dev/ttyACM0', { baudRate: 9600});
 
 
 // Setups socket.io to run across the http server and be setup to accept requests from localhost:3000 origin
@@ -18,7 +22,7 @@ const io = require("socket.io")(httpServer, {
   }
 });
 
-// TODO: make connection info more private
+// Uses either default mysql values or uses production values from .env file (if it exists)
 const connection_info = {
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'root',
@@ -29,16 +33,12 @@ const connection_info = {
 
 const DB_TABLE = process.env.DB_TABLE || 'files';
 
-console.log(connection_info);
-
-let connection = mysql.createConnection(connection_info);
-
-const port = 4001;
-
-connection.connect();
-
+// creates mysql connection
 // TODO: possibly local file caching if mySQL isn't working
 // TODO: change sql_files to dictionary by uuid instead
+let connection = mysql.createConnection(connection_info);
+connection.connect();
+
 
 let sql_files = [];
 
@@ -91,7 +91,7 @@ io.on('connection', (socket) => {
 
   // Deletes file that has uuid
   socket.on('delete file', (uuid) => {
-
+    // TODO: DELETE to Arduino
     console.log("deleting file with uuid: ", uuid);
 
     const SQL = "DELETE FROM "+ DB_TABLE +" WHERE uuid = ?";
@@ -113,5 +113,7 @@ io.on('connection', (socket) => {
 
 });
 
+// Starts httpServer on port 4001 for the backend
+const port = 4001;
 httpServer.listen(port, () => console.log('listening on port ' + port.toString()));
 

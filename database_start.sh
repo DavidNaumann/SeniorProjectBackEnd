@@ -1,5 +1,6 @@
 #!/bin/bash
-# Bash script written by Saad Ismail - me@saadismail.net
+
+sudo apt install mysql
 
 echo "Please enter main username (most likely root)"
 read -r mainuser

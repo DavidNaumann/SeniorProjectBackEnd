@@ -4,15 +4,22 @@
  *
  */
 
-// Variables for starting http server, mysql server and connections over the serial port
+// Variables for starting http server
 const app = require('express');
 const httpServer = require("http").createServer(app);
+
+
+// Database variables
 const mysql = require('mysql');
+let useMySQL = true;
+
+// Arduino control variables
 const SerialPort  = require('serialport');
 
 
 // Opening serial comms port for serial comms
-const serial_port = new SerialPort('/dev/ttyACM0', { baudRate: 9600});
+// TODO: test with actual serial connection
+// const serial_port = new SerialPort('/dev/ttyACM0', { baudRate: 9600});
 
 
 // Setups socket.io to run across the http server and be setup to accept requests from localhost:3000 origin
@@ -37,14 +44,31 @@ const DB_TABLE = process.env.DB_TABLE || 'files';
 // TODO: possibly local file caching if mySQL isn't working
 // TODO: change sql_files to dictionary by uuid instead
 let connection = mysql.createConnection(connection_info);
-connection.connect();
+
+
+console.log("Starting initial connection to database.");
+
+// start initial connection to mySQL database
+connection.connect(function (error) {
+  if (error) {
+    return console.error("Error connecting to initial connection to database!");
+  }
+
+  console.log("Successful connection to database.");
+});
 
 
 let sql_files = [];
 
+console.log("Calling SELECT on " + DB_TABLE + " table.");
+
 // Initial connection to receive current mySQL table
-connection.query('SELECT * FROM ' + DB_TABLE, function (error, res, req) {
-  if (error) throw error;
+connection.query('SELECT * FROM ' + DB_TABLE, function (error, res) {
+  if (error) {
+    return console.error("Error on SELECT on " + DB_TABLE + " table!");
+  }
+
+  console.log("Successful initial SELECT from " + DB_TABLE + " table.");
   let res_string = JSON.stringify(res);
   let res_json = JSON.parse(res_string);
 
@@ -59,8 +83,6 @@ io.on('connection', (socket) => {
 
   // On initial connection get files is called to keep front end up to date
   socket.on('get files', () => {
-    console.log('got files from front end');
-
     socket.emit('receive files', sql_files);
   });
 
@@ -70,20 +92,23 @@ io.on('connection', (socket) => {
     io.sockets.emit('receive files', files);
   });
 
-  /** Direct mySQL functions **/
+  /** Direct MySQL functions **/
 
   // Inserts file object into the mySQL table
   socket.on('insert file', (file) => {
     // TODO: POST to Arduino
-    console.log('file inserted');
+    console.log('Inserting file.');
 
     const mysql_arr = [[file.name, file.category, file.date, file.uuid]];
 
-    connection.query("INSERT INTO "+ DB_TABLE +" (name, category, date, uuid) VALUES (?)", mysql_arr, (error, results) => {
-      if (error) throw error;
+    connection.query("INSERT INTO "+ DB_TABLE +" (name, category, date, uuid) VALUES (?)", mysql_arr, (error) => {
+      if (error) {
+        return console.error("Error on INSERT INTO on " + DB_TABLE + " table!");
+      }
+
+      console.log('File successfully inserted.');
 
       sql_files.push(file);
-      console.log(sql_files);
       io.sockets.emit('receive files', sql_files);
     });
 
@@ -92,13 +117,18 @@ io.on('connection', (socket) => {
   // Deletes file that has uuid
   socket.on('delete file', (uuid) => {
     // TODO: DELETE to Arduino
-    console.log("deleting file with uuid: ", uuid);
+    console.log("Deleting file with uuid: ", uuid);
 
     const SQL = "DELETE FROM "+ DB_TABLE +" WHERE uuid = ?";
 
-    connection.query(SQL, uuid, (error, results, fields) => {
-      if (error) throw error;
+    connection.query(SQL, uuid, (error) => {
+      if (error) {
+        return console.error("Error on DELETE FROM on " + DB_TABLE + " table!");
+      }
 
+      console.log("File successfully deleted with uuid: ", uuid);
+
+      // Filters sql_files to get rid of object with given uuid
       sql_files = sql_files.filter(function(e) { return e.uuid !== uuid});
 
       io.sockets.emit('receive files', sql_files);
@@ -108,7 +138,7 @@ io.on('connection', (socket) => {
 
   // logs that user disconnected (for debugging sake)
   socket.on('disconnect', () => {
-    console.log('user disconnected');
+    console.log('User disconnected. Bye user :(');
   });
 
 });

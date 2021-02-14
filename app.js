@@ -15,11 +15,7 @@ let useMySQL = true;
 
 // Arduino control variables
 const SerialPort  = require('serialport');
-
-
-// Opening serial comms port for serial comms
-// TODO: test with actual serial connection
-// const serial_port = new SerialPort('/dev/ttyACM0', { baudRate: 9600});
+const serial_port = new SerialPort('/dev/ttyACM0');
 
 
 // Setups socket.io to run across the http server and be setup to accept requests from localhost:3000 origin
@@ -77,7 +73,7 @@ connection.query('SELECT * FROM ' + DB_TABLE, function (error, res) {
 
 // Gets that the user connected
 io.on('connection', (socket) => {
-  console.log('user connected');
+  console.log('User connected. Hi User :)');
 
   /** General socket functions **/
 
@@ -101,15 +97,24 @@ io.on('connection', (socket) => {
 
     const mysql_arr = [[file.name, file.category, file.date, file.uuid]];
 
-    connection.query("INSERT INTO "+ DB_TABLE +" (name, category, date, uuid) VALUES (?)", mysql_arr, (error) => {
-      if (error) {
-        return console.error("Error on INSERT INTO on " + DB_TABLE + " table!");
+    serial_port.write('insert', function(serial_error) {
+
+      if (serial_error) {
+        return console.error("Error on INSERT function on serial connection");
       }
 
-      console.log('File successfully inserted.');
+      //  serial connection successful insert into database
 
-      sql_files.push(file);
-      io.sockets.emit('receive files', sql_files);
+      connection.query("INSERT INTO " + DB_TABLE + " (name, category, date, uuid) VALUES (?)", mysql_arr, (error) => {
+        if (error) {
+          return console.error("Error on INSERT INTO on " + DB_TABLE + " table!");
+        }
+
+        console.log('File successfully inserted.');
+
+        sql_files.push(file);
+        io.sockets.emit('receive files', sql_files);
+      });
     });
 
   });
@@ -121,17 +126,28 @@ io.on('connection', (socket) => {
 
     const SQL = "DELETE FROM "+ DB_TABLE +" WHERE uuid = ?";
 
-    connection.query(SQL, uuid, (error) => {
-      if (error) {
-        return console.error("Error on DELETE FROM on " + DB_TABLE + " table!");
+
+    serial_port.write('delete', function(serial_error) {
+
+
+      if (serial_error) {
+        return console.error("Error on DELETE function on serial connection");
       }
 
-      console.log("File successfully deleted with uuid: ", uuid);
+      connection.query(SQL, uuid, (error) => {
+        if (error) {
+          return console.error("Error on DELETE FROM on " + DB_TABLE + " table!");
+        }
 
-      // Filters sql_files to get rid of object with given uuid
-      sql_files = sql_files.filter(function(e) { return e.uuid !== uuid});
+        console.log("File successfully deleted with uuid: ", uuid);
 
-      io.sockets.emit('receive files', sql_files);
+        // Filters sql_files to get rid of object with given uuid
+        sql_files = sql_files.filter(function (e) {
+          return e.uuid !== uuid
+        });
+
+        io.sockets.emit('receive files', sql_files);
+      });
     });
 
   });
@@ -145,5 +161,5 @@ io.on('connection', (socket) => {
 
 // Starts httpServer on port 4001 for the backend
 const port = 4001;
-httpServer.listen(port, () => console.log('listening on port ' + port.toString()));
+httpServer.listen(port, () => console.log('Starting HTTP listening server on port ' + port.toString() + '.'));
 

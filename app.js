@@ -11,11 +11,12 @@ const httpServer = require("http").createServer(app);
 
 // Database variables
 const mysql = require('mysql');
-let useMySQL = true;
+// TODO: local caching
+// let useMySQL = true;
 
 // Arduino control variables
-const SerialPort  = require('serialport');
-const serial_port = new SerialPort('/dev/ttyACM0');
+// const SerialPort  = require('serialport');
+// const serial_port = new SerialPort('/dev/ttyACM0');
 
 
 // Setups socket.io to run across the http server and be setup to accept requests from localhost:3000 origin
@@ -66,9 +67,8 @@ connection.query('SELECT * FROM ' + DB_TABLE, function (error, res) {
 
   console.log("Successful initial SELECT from " + DB_TABLE + " table.");
   let res_string = JSON.stringify(res);
-  let res_json = JSON.parse(res_string);
 
-  sql_files = res_json;
+  sql_files = JSON.parse(res_string);
 });
 
 // Gets that the user connected
@@ -79,6 +79,7 @@ io.on('connection', (socket) => {
 
   // On initial connection get files is called to keep front end up to date
   socket.on('get files', () => {
+    console.log(sql_files);
     socket.emit('receive files', sql_files);
   });
 
@@ -95,8 +96,20 @@ io.on('connection', (socket) => {
     // TODO: POST to Arduino
     console.log('Inserting file.');
 
-    const mysql_arr = [[file.name, file.category, file.date, file.uuid]];
+    const mysql_arr = [[file.name, file.category, file.date,file.creation_date ,file.uuid]];
 
+    connection.query("INSERT INTO " + DB_TABLE + " (name, category, date, creation_date, uuid) VALUES (?)", mysql_arr, (error) => {
+      if (error) {
+        return console.error("Error on INSERT INTO on " + DB_TABLE + " table!");
+      }
+
+      console.log('File successfully inserted.');
+
+      sql_files.push(file);
+      io.sockets.emit('receive files', sql_files);
+    });
+
+    /* TODO: add back for arduino
     serial_port.write('insert', function(serial_error) {
 
       if (serial_error) {
@@ -116,6 +129,7 @@ io.on('connection', (socket) => {
         io.sockets.emit('receive files', sql_files);
       });
     });
+    */
 
   });
 
@@ -124,32 +138,48 @@ io.on('connection', (socket) => {
     // TODO: DELETE to Arduino
     console.log("Deleting file with uuid: ", uuid);
 
-    const SQL = "DELETE FROM "+ DB_TABLE +" WHERE uuid = ?";
+    const SQL = "DELETE FROM " + DB_TABLE + " WHERE uuid = ?";
 
-
-    serial_port.write('delete', function(serial_error) {
-
-
-      if (serial_error) {
-        return console.error("Error on DELETE function on serial connection");
+    connection.query(SQL, uuid, (error) => {
+      if (error) {
+        return console.error("Error on DELETE FROM on " + DB_TABLE + " table!");
       }
 
-      connection.query(SQL, uuid, (error) => {
-        if (error) {
-          return console.error("Error on DELETE FROM on " + DB_TABLE + " table!");
+      console.log("File successfully deleted with uuid: ", uuid);
+
+      // Filters sql_files to get rid of object with given uuid
+      sql_files = sql_files.filter(function (e) {
+        return e.uuid !== uuid
+      });
+
+      io.sockets.emit('receive files', sql_files);
+
+      /* TODO: add back for arduino
+      serial_port.write('delete', function(serial_error) {
+
+
+        if (serial_error) {
+          return console.error("Error on DELETE function on serial connection");
         }
 
-        console.log("File successfully deleted with uuid: ", uuid);
+        connection.query(SQL, uuid, (error) => {
+          if (error) {
+            return console.error("Error on DELETE FROM on " + DB_TABLE + " table!");
+          }
 
-        // Filters sql_files to get rid of object with given uuid
-        sql_files = sql_files.filter(function (e) {
-          return e.uuid !== uuid
+          console.log("File successfully deleted with uuid: ", uuid);
+
+          // Filters sql_files to get rid of object with given uuid
+          sql_files = sql_files.filter(function (e) {
+            return e.uuid !== uuid
+          });
+
+          io.sockets.emit('receive files', sql_files);
         });
-
-        io.sockets.emit('receive files', sql_files);
       });
-    });
+      */
 
+    });
   });
 
   // logs that user disconnected (for debugging sake)

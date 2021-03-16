@@ -93,7 +93,6 @@ io.on('connection', (socket) => {
 
   // Inserts file object into the mySQL table
   socket.on('insert file', (file) => {
-    // TODO: POST to Arduino
     console.log('Inserting file.');
 
     const mysql_arr = [[file.name, file.category, file.date,file.creation_date ,file.uuid]];
@@ -135,7 +134,6 @@ io.on('connection', (socket) => {
 
   // Deletes file that has uuid
   socket.on('delete file', (uuid) => {
-    // TODO: DELETE to Arduino
     console.log("Deleting file with uuid: ", uuid);
 
     const SQL = "DELETE FROM " + DB_TABLE + " WHERE uuid = ?";

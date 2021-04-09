@@ -99,7 +99,6 @@ io.on('connection', (socket) => {
 
   // On initial connection get files is called to keep front end up to date
   socket.on('get files', () => {
-    console.log(sql_files);
     socket.emit('receive files', sql_files);
   });
 
@@ -142,7 +141,6 @@ io.on('connection', (socket) => {
 
       //  serial connection successful insert into database
       let serial_string = mode + "\n" + pos.toString() + "\n";
-      console.log(serial_string);
       serial_port.write(serial_string, function (serial_error) {
 
         if (serial_error) {

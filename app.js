@@ -19,6 +19,8 @@ const SerialPort  = require('serialport');
 const serial_port = new SerialPort('COM4');
 let pos = 0;
 
+// begin writing new functionality for busy
+
 let sql_files = [];
 
 // create arrays and max positions available
